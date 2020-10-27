@@ -1,0 +1,101 @@
+avb_common_cflags = [
+    "-D_FILE_OFFSET_BITS=64",
+    "-D_POSIX_C_SOURCE=199309L",
+    "-Wa,--noexecstack",
+    "-Werror",
+    "-Wall",
+    "-Wextra",
+    "-Wformat=2",
+    "-Wmissing-prototypes",
+    "-Wno-psabi",
+    "-Wno-unused-parameter",
+    "-Wno-format",
+    "-ffunction-sections",
+    "-fstack-protector-strong",
+    "-g",
+    "-DAVB_ENABLE_DEBUG",
+    "-DAVB_COMPILATION",
+]
+
+avb_common_cppflags = [
+    "-Wnon-virtual-dtor",
+    "-fno-strict-aliasing",
+]
+
+avb_common_ldflags = [
+    "-Wl,--gc-sections",
+    "-rdynamic",
+]
+
+avb_common_sources = [
+    "libavb/avb_chain_partition_descriptor.c",
+    "libavb/avb_cmdline.c",
+    "libavb/avb_crc32.c",
+    "libavb/avb_crypto.c",
+    "libavb/avb_descriptor.c",
+    "libavb/avb_footer.c",
+    "libavb/avb_hash_descriptor.c",
+    "libavb/avb_hashtree_descriptor.c",
+    "libavb/avb_kernel_cmdline_descriptor.c",
+    "libavb/avb_property_descriptor.c",
+    "libavb/avb_rsa.c",
+    "libavb/avb_sha256.c",
+    "libavb/avb_sha512.c",
+    "libavb/avb_slot_verify.c",
+    "libavb/avb_util.c",
+    "libavb/avb_vbmeta_image.c",
+    "libavb/avb_version.c",
+]
+
+cc_library_static {
+  name: "libavb_amlogic",
+  cflags: avb_common_cflags + ["-DAVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED"],
+  cppflags: avb_common_cppflags,
+  ldflags: avb_common_ldflags,
+  srcs: avb_common_sources + [
+    "libavb/avb_sysdeps_posix.c",
+    "libavb_ab/avb_ab_flow.c",
+    "libavb_user/avb_ops_user.cpp",
+    "libavb_user/avb_user_verity.c",
+    "libavb_user/avb_user_verification.c",
+  ],
+  shared_libs: ["liblog","libbase"],
+  static_libs: ["libfs_mgr","libfstab"],
+}
+
+cc_binary {
+  name: "avbctl_amlogic",
+  cflags: avb_common_cflags + ["-DAVB_COMPILATION","-DAVB_ENABLE_DEBUG"],
+  cppflags: avb_common_cppflags,
+  ldflags: avb_common_ldflags,
+  shared_libs: ["libbase","liblog"],
+  static_libs: ["libavb_amlogic","libfs_mgr","libfstab"],
+  srcs: ["tools/avbctl/avbctl.cc"],
+  proprietary: true,
+}
+
+cc_library_shared {
+  name: "bootctrl.amlogic",
+  required: ["libavb_amlogic","bootctrl"],
+  srcs: ["boot_control/boot_control_avb.c"],
+  cflags: avb_common_cflags + ["-DAVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED"],
+  ldflags: avb_common_ldflags,
+  shared_libs: ["liblog"],
+  static_libs: ["libavb_amlogic","libcutils","libbase","libfs_mgr","libfstab"],
+  product_specific: true,
+  relative_install_path: "hw",
+}
+
+cc_library_shared {
+  name: "bootctrl",
+  required: ["libavb_amlogic"],
+  srcs: ["boot_control/boot_control_avb.c"],
+  cflags: avb_common_cflags + ["-DAVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED"],
+  ldflags: avb_common_ldflags,
+  shared_libs: ["liblog"],
+  static_libs: ["libavb_amlogic","libcutils","libbase","libfs_mgr","libfstab"],
+  proprietary: true,
+  vendor: true,
+  suffix: "default",
+  relative_install_path: "hw",
+}
